@@ -3,7 +3,6 @@ package db
 import (
 	"fmt"
 	"github.com/cpu6660/sf-common/conf"
-	"github.com/cpu6660/sf-common/errors"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"sync"
@@ -22,8 +21,8 @@ const (
 	MaxOpenConns    = 500 //MaxOpenConns
 )
 
-var dbClients *DbClients
-var lock sync.Mutex
+var DbClientsSingle *DbClients
+var dbMutex sync.Mutex
 
 type DbClients struct {
 	clients map[string]*gorm.DB
@@ -31,29 +30,35 @@ type DbClients struct {
 	sync.Mutex
 }
 
-func NewDbClients(config *conf.Config) *DbClients {
 
-	if dbClients == nil {
-		lock.Lock()
-		defer lock.Unlock()
-		dbClients = &DbClients{}
-		dbClients.clients = make(map[string]*gorm.DB)
-		dbClients.config = config
+func NewDbClients(config *conf.Config,single bool) *DbClients {
+
+	if single && DbClientsSingle != nil {
+		return DbClientsSingle
+	}
+
+	dbMutex.Lock()
+	defer dbMutex.Unlock()
+
+
+	dbClients := &DbClients{}
+	dbClients.clients = make(map[string]*gorm.DB)
+	dbClients.config = config
+
+	if single {
+		DbClientsSingle = dbClients
 	}
 	return dbClients
 }
 
 //get db conn
-func GetConn(dbName string, connectMode int) (*gorm.DB, error) {
+func (dbClients *DbClients) GetConn(dbName string, connectMode int) (*gorm.DB, error) {
 
 	var (
 		conn *gorm.DB
 		err  error
 	)
 
-	if dbClients == nil {
-		return nil, errors.DbClientsNotInit
-	}
 
 	if connectMode == DB_CONNECT_MODE_GET {
 		if currentDb, ok := dbClients.clients[dbName]; ok {

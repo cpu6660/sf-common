@@ -9,17 +9,34 @@ import (
 
 var RedisTimeOut = 10*time.Second
 
+
+var (
+	RedisClientsSingle *RedisClients
+	redisMutex sync.Mutex
+)
+
 type RedisClients struct {
 	clients map[string]*redis.Client
 	config  *conf.Config
 	sync.Mutex
 }
 
-func NewRedisClients(config *conf.Config) RedisClients {
+func NewRedisClients(config *conf.Config,single bool) *RedisClients {
 
-	redisClients := RedisClients{}
+	redisMutex.Lock()
+	defer redisMutex.Unlock()
+
+	if single && RedisClientsSingle != nil {
+		return RedisClientsSingle
+	}
+
+	redisClients := &RedisClients{}
 	redisClients.clients = make(map[string]*redis.Client)
 	redisClients.config = config
+
+	if single {
+		RedisClientsSingle = redisClients
+	}
 
 	return redisClients
 
