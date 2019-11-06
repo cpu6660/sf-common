@@ -4,7 +4,10 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/cpu6660/sf-common/conf"
 	"sync"
+	"time"
 )
+
+var RedisTimeOut = 10*time.Second
 
 type RedisClients struct {
 	clients map[string]*redis.Client
