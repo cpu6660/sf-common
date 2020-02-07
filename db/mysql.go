@@ -30,8 +30,7 @@ type DbClients struct {
 	sync.Mutex
 }
 
-
-func NewDbClients(config *conf.Config,single bool) *DbClients {
+func NewDbClients(config *conf.Config, single bool) *DbClients {
 
 	if single && DbClientsSingle != nil {
 		return DbClientsSingle
@@ -39,7 +38,6 @@ func NewDbClients(config *conf.Config,single bool) *DbClients {
 
 	dbMutex.Lock()
 	defer dbMutex.Unlock()
-
 
 	dbClients := &DbClients{}
 	dbClients.clients = make(map[string]*gorm.DB)
@@ -59,6 +57,8 @@ func (dbClients *DbClients) GetConn(dbName string, connectMode int) (*gorm.DB, e
 		err  error
 	)
 
+	//lock db clients  if create new  db client
+	dbClients.Lock()
 
 	if connectMode == DB_CONNECT_MODE_GET {
 		if currentDb, ok := dbClients.clients[dbName]; ok {
@@ -70,8 +70,6 @@ func (dbClients *DbClients) GetConn(dbName string, connectMode int) (*gorm.DB, e
 		}
 	}
 
-	//lock db clients  if create new  db client
-	dbClients.Lock()
 	defer dbClients.Unlock()
 
 	//if client is disconnected, delete it

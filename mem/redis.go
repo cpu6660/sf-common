@@ -1,18 +1,17 @@
 package mem
 
 import (
-	"github.com/go-redis/redis"
 	"github.com/cpu6660/sf-common/conf"
+	"github.com/go-redis/redis"
 	"sync"
 	"time"
 )
 
-var RedisTimeOut = 10*time.Second
-
+var RedisTimeOut = 10 * time.Second
 
 var (
 	RedisClientsSingle *RedisClients
-	redisMutex sync.Mutex
+	redisMutex         sync.Mutex
 )
 
 type RedisClients struct {
@@ -21,7 +20,7 @@ type RedisClients struct {
 	sync.Mutex
 }
 
-func NewRedisClients(config *conf.Config,single bool) *RedisClients {
+func NewRedisClients(config *conf.Config, single bool) *RedisClients {
 
 	redisMutex.Lock()
 	defer redisMutex.Unlock()
@@ -48,6 +47,8 @@ func (r RedisClients) GetClient(redisName string) (*redis.Client, error) {
 		err error
 	)
 
+	r.Lock()
+
 	if _, ok := r.clients[redisName]; ok {
 		client := r.clients[redisName]
 		err = checkRedisStatus(client)
@@ -58,7 +59,6 @@ func (r RedisClients) GetClient(redisName string) (*redis.Client, error) {
 
 	}
 
-	r.Lock()
 	defer r.Unlock()
 
 	if err != nil {
