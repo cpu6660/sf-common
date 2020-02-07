@@ -59,6 +59,7 @@ func (dbClients *DbClients) GetConn(dbName string, connectMode int) (*gorm.DB, e
 
 	//lock db clients  if create new  db client
 	dbClients.Lock()
+	defer dbClients.Unlock()
 
 	if connectMode == DB_CONNECT_MODE_GET {
 		if currentDb, ok := dbClients.clients[dbName]; ok {
@@ -70,7 +71,6 @@ func (dbClients *DbClients) GetConn(dbName string, connectMode int) (*gorm.DB, e
 		}
 	}
 
-	defer dbClients.Unlock()
 
 	//if client is disconnected, delete it
 	if err != nil {

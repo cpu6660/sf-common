@@ -48,6 +48,7 @@ func (r RedisClients) GetClient(redisName string) (*redis.Client, error) {
 	)
 
 	r.Lock()
+	defer r.Unlock()
 
 	if _, ok := r.clients[redisName]; ok {
 		client := r.clients[redisName]
@@ -59,7 +60,6 @@ func (r RedisClients) GetClient(redisName string) (*redis.Client, error) {
 
 	}
 
-	defer r.Unlock()
 
 	if err != nil {
 		delete(r.clients, redisName)
